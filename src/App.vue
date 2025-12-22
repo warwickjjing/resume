@@ -1,20 +1,24 @@
 <template>
   <div class="page">
-    <main class="paper" aria-label="이력서">
+    <main class="paper" aria-label="이력서" ref="resumeRef">
       <header class="header">
         <div>
-          <h1 class="name">{{ resume.profile.name }}</h1>
+          <h1 class="name" @click="cnt++">{{ resume.profile.name }}</h1>
           <p class="headline">{{ headlinePeriod }}</p>
 
           <div class="meta">
             <template v-for="(c, idx) in resume.profile.contacts" :key="idx">
               <a v-if="c.href" class="meta-item" :href="c.href" target="_blank" rel="noreferrer">
-                @ {{ c.label }}
+                {{ c.prefix }} {{ c.label }}
               </a>
-              <span v-else class="meta-item">{{ c.label }}</span>
+              <span v-else>{{ c.label }}</span>
             </template>
           </div>
         </div>
+
+        <button v-if="showPdf" class="pdf-btn" @click="downloadPdf">
+          PDF 다운로드
+        </button>
       </header>
 
       <section v-if="resume.profile.summary?.length" class="summary">
@@ -129,7 +133,36 @@
 </template>
 
 <script setup>
-  import { computed } from 'vue';
+import { computed, ref } from 'vue';
+import html2pdf from 'html2pdf.js';
+
+const resumeRef = ref(null);
+
+function downloadPdf() {
+  const element = resumeRef.value;
+
+  const opt = {
+    margin: [10, 10, 10, 10],
+    filename: '서상훈_이력서.pdf',
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: {
+      scale: 2,
+      useCORS: true,
+    },
+    jsPDF: {
+      unit: 'mm',
+      format: 'a4',
+      orientation: 'portrait',
+    },
+  };
+
+  html2pdf().set(opt).from(element).save();
+  cnt.value = 0;
+}
+const cnt = ref(0);
+const showPdf = computed(() => {
+  return cnt.value >= 7;
+})
 /**
 * 시작~종료 기간을 년/개월로 계산
 * @param {string} startDateStr - 시작일 (YYYY-MM)
@@ -227,8 +260,8 @@ const resume = {
     name: '서상훈',
     headline: 'FullStack Developer · 3년 5개월+',
     contacts: [
-      { label: '010-5112-7717' },
-      { label: 'seosh9369@gmail.com', href: 'mailto:seosh9369@gmail.com' },
+      { label: '010-5112-7717', href: 'tel:01051127717'},
+      { label: 'seosh9369@gmail.com', href: 'mailto:seosh9369@gmail.com', prefix: '@' },
       { label: 'Seoul, KR' },
     ],
     summary: [
@@ -327,6 +360,9 @@ const resume = {
 
   certificates: [
     { name: '정보처리산업기사', meta: '한국산업인력공단 · 2025' },
+    { name: '워드프로세서3급', meta: '대한상공회의소 · 2007' },
+    { name: 'ITQ 아래한글 A등급', meta: '한국생산성본부 · 2006' },
+    { name: 'ITQ 한글파워포인트', meta: '한국생산성본부 · 2006' },
   ],
 
   languages: [
@@ -637,5 +673,20 @@ a {
     border-radius: 0;
     padding: 0;
   }
+}
+
+.pdf-btn {
+  border: 1px solid var(--line);
+  background: #fff;
+  color: #374151;
+  font-size: 12.5px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pdf-btn:hover {
+  background: #f9fafb;
 }
 </style>
