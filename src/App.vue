@@ -4,7 +4,7 @@
       <header class="header">
         <div>
           <h1 class="name">{{ resume.profile.name }}</h1>
-          <p class="headline">{{ resume.profile.headline }}</p>
+          <p class="headline">{{ headlinePeriod }}</p>
 
           <div class="meta">
             <template v-for="(c, idx) in resume.profile.contacts" :key="idx">
@@ -41,7 +41,7 @@
             <div class="item-head">
               <span class="org">{{ exp.company }}</span>
               <span v-if="exp.position" class="role">{{ exp.position }}</span>
-              <span class="period">{{ exp.period }}</span>
+              <span class="period">{{ calcPeriodYearsMonths(exp.start, exp.end) }}</span>
             </div>
 
             <p v-if="exp.description" class="desc">{{ exp.description }}</p>
@@ -129,6 +129,7 @@
 </template>
 
 <script setup>
+  import { computed } from 'vue';
 /**
 * 시작~종료 기간을 년/개월로 계산
 * @param {string} startDateStr - 시작일 (YYYY-MM)
@@ -163,11 +164,59 @@ function calcPeriodYearsMonths(startDateStr, endDateStr = null) {
   const total = years > 0 ? `${years}년 ${months}개월` : `${months}개월`
 
   if (endDateStr) {
-    return `${startDateStr.substring(0, 7)} - ${endDateStr.substring(0, 7)} (${total})`;
+    return `${startDateStr} - ${endDateStr} (${total})`;
   } else {
-    return `${startDateStr.substring(0, 7)} - 재직중 (${total})`;
+    return `${startDateStr} - 재직중 (${total})`;
   }
 }
+
+function calcToTotalMonth(start, end = null) {
+  const s = new Date(`${start}-01`);
+  const e = end ? new Date(`${end}-01`) : new Date();
+
+  return (
+    (e.getFullYear() - s.getFullYear()) * 12 +
+    (e.getMonth() - s.getMonth())
+  )
+}
+
+function formatPeriod(start, end = null) {
+  const totalMonth = calcPeriodYearsMonths(start, end);
+  const years = Math.floor(totalMonth / 12);
+  const months = (totalMonth & 12);
+
+  const ym = years > 0 ? `${years}년 ${months}개월` : `${months}개월`
+  const endDate = end ? end : '재직중';
+
+  return `${start} - ${endDate} (${ym})`;
+}
+
+const experiencesComputed = computed(() =>
+  resume.experiences.map(exp => ({
+    ...exp,
+    periodText: formatPeriod(exp.start, exp.end),
+    totalMonths: calcToTotalMonth(exp.start, exp.end),
+    projects: exp.projects?.map(p => ({
+      ...p,
+      periodText: formatPeriod(p.start, p.end),
+      totalMonths: calcToTotalMonth(p.start, p.end),
+    }))
+  }))
+)
+
+const headlinePeriod = computed(() => {
+  const totalMonths = experiencesComputed.value.reduce(
+    (sum, e) => sum + e.totalMonths,
+    0
+  )
+
+  const years = Math.floor(totalMonths / 12)
+  const months = totalMonths % 12
+
+  const period = (months == 0 ? `${years}년` : `${years}년 ${months}개월`) + '+';
+
+  return `FullStack Developer · ${period}`;
+})
 /**
  * ✅ 여기(resume 객체)만 수정하면 화면 내용이 바뀝니다.
  * - contacts: label은 화면 표시 텍스트, href는 링크(선택)
@@ -193,7 +242,8 @@ const resume = {
     {
       company: 'AITStory',
       position: '풀스택 개발자',
-      period: calcPeriodYearsMonths('2024-05-07'),
+      start: '2024-05',
+      end: null,
       description: '사내 ERP 개발 및 SI 파견 근무',
       highlights: [
         '사내 ERP 관련 소스 코드 개발',
@@ -226,7 +276,8 @@ const resume = {
     {
       company: 'LG하이케어솔루션',
       position: '정보보안 솔루션 운영',
-      period: calcPeriodYearsMonths('2023-12', '2024-02'),
+      start: '2023-12',
+      end: '2024-02',
       highlights: [
         '사내 정보보안 솔루션 운영 및 정책 관리',
         '보안 로그 분석 및 이슈 대응',
@@ -243,7 +294,8 @@ const resume = {
     {
       company: 'Epikar.corp',
       position: '풀스택 개발자',
-      period: calcPeriodYearsMonths('2022-06', '2023-09'),
+      start: '2022-06',
+      end: '2023-09',
       highlights: [
         '웹페이지 제작 및 어플리케이션 마이그레이션'
       ],
