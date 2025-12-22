@@ -16,6 +16,10 @@
           </div>
         </div>
 
+        <div>
+          <img src="../public/photo.jpg" style="max-width: 100px; width: 100%;" />
+        </div>
+
         <button v-if="showPdf" class="pdf-btn" @click="downloadPdf">
           PDF 다운로드
         </button>
@@ -688,5 +692,10 @@ a {
 
 .pdf-btn:hover {
   background: #f9fafb;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
 }
 </style>
