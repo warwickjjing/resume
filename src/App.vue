@@ -1,40 +1,73 @@
 <template>
-  <div class="page">
-    <main class="paper" aria-label="이력서" ref="resumeRef">
-      <header class="header">
-        <div>
-          <h1 class="name" @click="cnt++">{{ resume.profile.name }}</h1>
-          <p class="headline">{{ headlinePeriod }}</p>
-
-          <div class="meta">
-            <template v-for="(c, idx) in resume.profile.contacts" :key="idx">
-              <a v-if="c.href" class="meta-item" :href="c.href" target="_blank" rel="noreferrer">
-                {{ c.prefix }} {{ c.label }}
-              </a>
-              <span v-else>{{ c.label }}</span>
-            </template>
+  <div class="page page--split">
+    <aside class="side">
+      <div class="side__photo">
+        <img src="../public/photo.jpg" alt="프로필 사진" />
+      </div>
+      <div class="side__box">
+        <h2 class="side__title">개인정보</h2>
+        <ul class="side__list">
+          <li v-for="(c, idx) in resume.profile.contacts" :key="idx">
+            <a v-if="c.href" :href="c.href" class="side__link" target="_blank" rel="noreferrer">
+              {{ c.label }}
+            </a>
+            <span v-else>{{ c.label }}</span>
+          </li>
+        </ul>
+      </div>
+      <div v-if="resume.certificates?.length" class="side__box">
+        <h2 class="side__title">자격증</h2>
+        <ul class="side__list">
+          <li v-for="(c, i) in resume.certificates" :key="i">
+            <div class="side__row">
+              <span>{{ c.name }}</span>
+              <small class="side__muted">{{ c.meta }}</small>
+            </div>
+          </li>
+        </ul>
+      </div>
+      <div v-if="resume.skills?.length" class="side__box">
+        <h2 class="side__title">기술 숙련도</h2>
+        <div class="skills-list skills-list--side">
+          <div v-for="(s, i) in sortedSkillList" :key="i" class="skill-row">
+            <span class="skill-name">{{ s.name }}</span>
+            <div class="skill-bar">
+              <div
+                class="skill-bar__fill"
+                :style="{ width: `${clampLevel(s.level)}%` }"
+                aria-hidden="true"
+              ></div>
+            </div>
           </div>
         </div>
+      </div>
+    </aside>
 
+    <main class="paper paper--content" aria-label="이력서" ref="resumeRef">
+      <header class="header">
         <div>
-          <img src="../public/photo.jpg" style="max-width: 100px; width: 100%;" />
+          <p class="eyebrow">서비스 전체 흐름을 이해하고 구현하는</p>
+          <h1 class="name" @click="cnt++">
+            <span class="name__highlight">{{ resume.profile.name }}</span> <span class="name__suffix">입니다.</span>
+          </h1>
+          <p class="headline">{{ headlinePeriod }}</p>
         </div>
 
-        <button v-if="showPdf" class="pdf-btn" @click="downloadPdf">
-          PDF 다운로드
-        </button>
+        <div class="header-actions">
+          <button v-if="showPdf" class="pdf-btn" @click="downloadPdf">
+            PDF 다운로드
+          </button>
+        </div>
       </header>
 
-      <section v-if="resume.profile.summary?.length" class="summary">
+      <section v-if="resume.profile.summary?.length" class="summary" id="summary">
         <h2 class="section-title">소개</h2>
         <ul class="bullets">
           <li v-for="(line, i) in resume.profile.summary" :key="i">{{ line }}</li>
         </ul>
       </section>
 
-      <hr class="divider" />
-
-      <section v-if="resume.experiences?.length" class="section">
+      <section v-if="resume.experiences?.length" class="section" id="experiences">
         <h2 class="section-title">경력</h2>
 
         <article v-for="(exp, i) in resume.experiences" :key="i" class="item">
@@ -47,9 +80,11 @@
 
           <div>
             <div class="item-head">
-              <span class="org">{{ exp.company }}</span>
-              <span v-if="exp.position" class="role">{{ exp.position }}</span>
-              <span class="period">{{ calcPeriodYearsMonths(exp.start, exp.end) }}</span>
+              <div class="project-head">
+                <span class="org">{{ exp.company }}</span>
+                <span v-if="exp.position" class="role">{{ exp.position }}</span>
+                <span class="period">{{ calcPeriodYearsMonths(exp.start, exp.end) }}</span>
+              </div>
             </div>
 
             <p v-if="exp.description" class="desc">{{ exp.description }}</p>
@@ -59,22 +94,44 @@
             </ul>
 
             <div v-if="exp.projects?.length" class="projects">
-              <div v-for="(p, pi) in exp.projects" :key="pi" class="project">
-                <div class="project-head">
-                  <span class="project-name">{{ p.name }}</span>
-                  <span v-if="p.period" class="project-period">{{ p.period }}</span>
-                </div>
-                <ul v-if="p.bullets?.length" class="bullets">
-                  <li v-for="(pb, pbi) in p.bullets" :key="pbi">{{ pb }}</li>
-                </ul>
-                <p v-if="p.stack" class="stack"><b>기술</b>: {{ p.stack }}</p>
-              </div>
+              <div class="project-label">[진행 프로젝트]</div>
+              <v-expansion-panels
+                multiple
+                :model-value="pdfState ? exp.projects.map((_, idx) => idx) : (projectPanels[i] || [])"
+                @update:modelValue="val => projectPanels[i] = val"
+                class="project-panels"
+              >
+                <v-expansion-panel
+                  v-for="(p, pi) in exp.projects"
+                  :key="pi"
+                  :value="pi"
+                  class="project-panel"
+                >
+                  <v-expansion-panel-title>
+                    <div class="project-title">
+                      <span class="project-name">{{ p.name }}</span>
+                      <span v-if="p.period" class="project-period">{{ p.period }}</span>
+                    </div>
+                  </v-expansion-panel-title>
+                  <v-expansion-panel-text>
+                    <div class="project-meta">
+                      <span>수행인원: {{ p.teamSize }}</span>
+                      <span v-if="p.involvement">참여도: {{ p.involvement }}</span>
+                    </div>
+                    <ul v-if="p.bullets?.length" class="bullets bullets--tight">
+                      <li v-for="(pb, pbi) in p.bullets" :key="pbi">{{ pb }}</li>
+                    </ul>
+                    <p v-if="p.description" class="desc">{{ p.description }}</p>
+                    <p v-if="p.stack" class="stack"><b>기술</b>: {{ p.stack }}</p>
+                  </v-expansion-panel-text>
+                </v-expansion-panel>
+              </v-expansion-panels>
             </div>
           </div>
         </article>
       </section>
 
-      <section v-if="resume.education?.length" class="section">
+      <section v-if="resume.education?.length" class="section" id="education">
         <h2 class="section-title">학력</h2>
         <article v-for="(edu, i) in resume.education" :key="i" class="item item--compact">
           <div class="icon icon--dark" aria-hidden="true">
@@ -85,65 +142,76 @@
           </div>
           <div>
             <div class="item-head">
-              <span class="org">{{ edu.school }}</span>
-              <span v-if="edu.major" class="role">{{ edu.major }}</span>
+              <span class="school">{{ edu.school }}</span>
+              <span v-if="edu.major" class="major">{{ edu.major }}<span v-if="edu.grade">({{ edu.grade }})</span></span>
               <span class="period">{{ edu.period }}</span>
             </div>
-            <p v-if="edu.note" class="desc">{{ edu.note }}</p>
+            <!-- <p v-if="edu.note" class="desc">{{ edu.note }}</p> -->
           </div>
         </article>
       </section>
 
-      <section class="bottom">
-        <div v-if="resume.skills?.length" class="mini">
-          <h3>스킬</h3>
-          <div class="tags">
-            <span v-for="(s, i) in resume.skills" :key="i" class="tag">{{ s }}</span>
+      <section v-if="resume.bootcamp?.length" class="section" id="bootcamp">
+        <h2 class="section-title">교육</h2>
+        <ul class="plain-list">
+          <li v-for="(c, i) in resume.bootcamp" :key="i">
+            <span class="plain-title">{{ c.name }}</span>
+            <span class="plain-meta">{{ c.meta }}</span>
+          </li>
+        </ul>
+      </section>
+
+      <section v-if="resume.languages?.length" class="section" id="languages">
+        <h2 class="section-title">외국어</h2>
+        <ul class="plain-list">
+          <li v-for="(l, i) in resume.languages" :key="i">
+            <span class="plain-title">{{ l.name }}</span>
+            <span class="plain-meta">{{ l.meta }}</span>
+          </li>
+        </ul>
+      </section>
+
+      <div class="fab-container" :class="{ 'fab-hidden': pdfState }" aria-label="빠른 이동">
+        <button class="fab-btn fab-top" @click="scrollToTop" title="위로 가기">↑</button>
+        <div class="fab-menu">
+          <button
+            class="fab-btn fab-plus"
+            @click="toggleFabMenu"
+            :aria-expanded="fabMenuOpen"
+            title="섹션 이동"
+          >
+            +
+          </button>
+          <div v-if="fabMenuOpen" class="fab-list">
+            <button
+              v-for="sec in navSections"
+              :key="sec.id"
+              class="fab-list-item"
+              @click="scrollToSection(sec.id)"
+            >
+              {{ sec.label }}
+            </button>
           </div>
         </div>
-
-        <div v-if="resume.bootcamp?.length" class="mini">
-          <h3>교육</h3>
-          <ul class="plain-list">
-            <li v-for="(c, i) in resume.bootcamp" :key="i">
-              <span class="plain-title">{{ c.name }}</span>
-              <span class="plain-meta">{{ c.meta }}</span>
-            </li>
-          </ul>
-        </div>
-
-        <div v-if="resume.certificates?.length" class="mini">
-          <h3>자격증/수상</h3>
-          <ul class="plain-list">
-            <li v-for="(c, i) in resume.certificates" :key="i">
-              <span class="plain-title">{{ c.name }}</span>
-              <span class="plain-meta">{{ c.meta }}</span>
-            </li>
-          </ul>
-        </div>
-
-        <div v-if="resume.languages?.length" class="mini">
-          <h3>외국어</h3>
-          <ul class="plain-list">
-            <li v-for="(l, i) in resume.languages" :key="i">
-              <span class="plain-title">{{ l.name }}</span>
-              <span class="plain-meta">{{ l.meta }}</span>
-            </li>
-          </ul>
-        </div>
-      </section>
+      </div>
     </main>
   </div>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, ref, nextTick } from 'vue';
 import html2pdf from 'html2pdf.js';
 
 const resumeRef = ref(null);
+const pdfState = ref(false);
+const projectPanels = ref({});
+const fabMenuOpen = ref(false);
 
-function downloadPdf() {
+async function downloadPdf() {
+  const prevPanels = JSON.parse(JSON.stringify(projectPanels.value));
   const element = resumeRef.value;
+  pdfState.value = true;
+  await nextTick();
 
   const opt = {
     margin: [10, 10, 10, 10],
@@ -160,8 +228,26 @@ function downloadPdf() {
     },
   };
 
-  html2pdf().set(opt).from(element).save();
+  await html2pdf().set(opt).from(element).save();
+  projectPanels.value = prevPanels;
+  pdfState.value = false;
   cnt.value = 0;
+}
+
+function toggleFabMenu() {
+  fabMenuOpen.value = !fabMenuOpen.value;
+}
+
+function scrollToSection(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  fabMenuOpen.value = false;
+}
+
+function scrollToTop() {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  fabMenuOpen.value = false;
 }
 const cnt = ref(0);
 const showPdf = computed(() => {
@@ -229,7 +315,7 @@ function formatPeriod(start, end = null) {
 }
 
 const experiencesComputed = computed(() =>
-  resume.experiences.map(exp => ({
+  resume.value.experiences.map(exp => ({
     ...exp,
     periodText: formatPeriod(exp.start, exp.end),
     totalMonths: calcToTotalMonth(exp.start, exp.end),
@@ -240,6 +326,21 @@ const experiencesComputed = computed(() =>
     }))
   }))
 )
+
+const navSections = computed(() => [
+  { id: 'summary', label: '소개', enabled: resume.value.profile.summary?.length },
+  { id: 'experiences', label: '경력', enabled: resume.value.experiences?.length },
+  { id: 'education', label: '학력', enabled: resume.value.education?.length },
+  { id: 'skills', label: '스킬', enabled: resume.value.skills?.length },
+  { id: 'bootcamp', label: '교육', enabled: resume.value.bootcamp?.length },
+  { id: 'certificates', label: '자격/수상', enabled: resume.value.certificates?.length },
+  { id: 'languages', label: '외국어', enabled: resume.value.languages?.length },
+].filter(s => s.enabled))
+
+function clampLevel(level) {
+  if (level === undefined || level === null || isNaN(level)) return 0;
+  return Math.min(100, Math.max(0, Number(level)));
+}
 
 const headlinePeriod = computed(() => {
   const totalMonths = experiencesComputed.value.reduce(
@@ -259,19 +360,20 @@ const headlinePeriod = computed(() => {
  * - contacts: label은 화면 표시 텍스트, href는 링크(선택)
  * - experiences/projects: 항목 추가/삭제는 배열에서 하면 됩니다.
  */
-const resume = {
+const resume = ref({
   profile: {
     name: '서상훈',
     headline: 'FullStack Developer · 3년 5개월+',
     contacts: [
-      { label: '010-5112-7717', href: 'tel:01051127717'},
+      { label: '010-5112-7717', href: 'tel:01051127717' },
       { label: 'seosh9369@gmail.com', href: 'mailto:seosh9369@gmail.com', prefix: '@' },
       { label: 'Seoul, KR' },
     ],
     summary: [
-      '저는 서비스의 실제 운영 환경에서 발생하는 문제를 기술로 해결하는 개발자입니다.',
-      '웹·모바일 서비스 개발부터 보안 솔루션 운영, 대기업 내부망 환경에서의 서비스 구축까지 경험하였습니다.',
-      '기능 구현을 넘어 안정성과 확장성을 고려한 개발의 중요성을 체득해 왔습니다.'
+      '요구사항 분석부터 구현·운영 대응까지 개발 전 과정을 경험하며 문제 해결 능력을 키워왔습니다.',
+      '기획·디자인·운영 담당자와의 협업을 통해 기술과 비즈니스 사이의 균형을 맞추는 개발을 지향합니다.',
+      '다양한 경험을 토대로 각 환경에서 안정적인 서비스 구조를 설계해 왔습니다.',
+      '운영 이후까지 책임질 수 있는 구조를 만드는 것을 개발의 중요한 가치로 생각합니다.'
     ],
   },
 
@@ -283,20 +385,23 @@ const resume = {
       end: null,
       description: '사내 ERP 개발 및 SI 파견 근무',
       highlights: [
-        '사내 ERP 관련 소스 코드 개발',
-        '기존 Vue2 → Vue3 마이그레이션',
-        'Spring Boot 2.7.4 → 3.1.3 마이그레이션'
+        '사내 ERP 관련 웹 페이지 제작',
+        '전체 프로젝트 베이스 소스 코드 개발',
+        'Vue2 → Vue3 마이그레이션 / Spring Boot 2.7.4 → 3.1.3 마이그레이션'
       ],
       projects: [
         {
           name: '삼성카드 모니모 원앱 데이터서비스포털 웹페이지 메인 개발',
           period: calcPeriodYearsMonths('2024-09', '2025-12'),
+          teamSize: '8명',
+          involvement: '기획·설계 50% / 개발 70%',
           bullets: [
             '삼성카드 모니모 원앱 데이터서비스포털 웹페이지 메인 개발',
             '권한/로그/배치 운영 도구 개발로 운영 효율 개선',
             '프런트/백엔드 전반 개발 및 유지보수',
             '타 개발자 소스코드 리뷰 및 검수',
           ],
+          isOpen: true,
           stack: 'Vue3, TypeScript, Oracle, Redis, K8S, Spring Boot, Docker, Git',
         },
         // {
@@ -315,17 +420,24 @@ const resume = {
       position: '정보보안 솔루션 운영',
       start: '2023-12',
       end: '2024-02',
+      description: '보안 솔루션 관리 및 지점 보안 관리',
       highlights: [
         '사내 정보보안 솔루션 운영 및 정책 관리',
         '보안 로그 분석 및 이슈 대응',
+        '사내 정보보안 규칙 수립',
+        '소만사 DLP 솔루션 관리',
+        '문서중앙화 시스템 관리'
       ],
       projects: [
-        {
-          name: '사내 정보보안 규칙 수립',
-          period: calcPeriodYearsMonths('2023-12', '2024-02'),
-          bullets: ['개인정보 보호', '소만사 DLP 솔루션 관리', '문서중앙화 시스템 관리'],
-          stack: 'DLP API, 문서 중앙화',
-        },
+        // {
+        //   name: '사내 정보보안 규칙 수립',
+        //   period: calcPeriodYearsMonths('2023-12', '2024-02'),
+        //   teamSize: '2명',
+        //   involvement: '운영·정책 관리 30%',
+        //   bullets: ['개인정보 보호', '소만사 DLP 솔루션 관리', '문서중앙화 시스템 관리'],
+        //   isOpen: false,
+        //   stack: 'DLP API, 문서 중앙화',
+        // },
       ],
     },
     {
@@ -333,18 +445,28 @@ const resume = {
       position: '풀스택 개발자',
       start: '2022-06',
       end: '2023-09',
+      description: '고객사 웹·앱 유지보수 및 마이그레이션',
       highlights: [
-        '웹페이지 제작 및 어플리케이션 마이그레이션'
+        '기존 팀 리드가 구축한 사내 서비스의 구조를 분석하고 인수',
+        'Vue 기반 화면 개발 및 기능 개선',
+        'Spring Boot 기반 API 수정 및 신규 기능 개발',
+        '신입 동기 개발자와 협업하여 기능 구현 및 코드 정리',
+        '운영 중 발생하는 이슈 대응 및 추가 요구사항 반영',
+        '요구사항을 기능 단위로 정리하여 티켓 기반으로 관리하며 Agile 방식으로 개발 진행'
       ],
       projects: [
         {
           name: 'BTS(BMW Testdriving Service) / MTS(MINI Testdriving Service)',
           period: calcPeriodYearsMonths('2022-08', '2023-09'),
+          teamSize: '3명',
+          involvement: '개발 45%',
           bullets: [
             'BTS/MTS 딜러사 관리 웹페이지 제작',
             'BTS/MTS 딜러사 관리 어플리케이션 제작',
-            '통계 관리 대시보드 제공'
+            '통계 관리 대시보드 제공',
+            '주 1회 KPT 회고 및 리뷰를 통해 개발 프로세스와 협업 방식을 지속적으로 개선'
           ],
+          isOpen: false,
           stack: 'Vue2, JavaScript, MySQL, Spring Boot, Jenkins, Docker',
         },
       ],
@@ -356,11 +478,29 @@ const resume = {
       school: '인하공업전문대학교',
       major: '정보통신학과',
       period: '2014.03 – 2017.02',
-      note: '전문학사',
+      grade: '4.09/4.5'
+      // note: '전문학사',
+    },
+    {
+      school: '계양고등학교',
+      major: '이과',
+      period: '2011.03 – 2014.02',
+      // note: '이과',
     },
   ],
 
-  skills: ['React', 'Vue3', 'Node.js', 'TypeScript', 'Sass', 'MySQL', 'Redis', 'K8S', 'Spring Boot', 'Docker', 'Git'],
+  skills: [
+    { name: 'React', level: 70 },
+    { name: 'Vue3', level: 90 },
+    { name: 'Node.js', level: 85 },
+    { name: 'TypeScript', level: 83 },
+    { name: 'MySQL', level: 85 },
+    { name: 'Redis', level: 85 },
+    { name: 'K8S', level: 70 },
+    { name: 'Spring Boot', level: 85 },
+    { name: 'Docker', level: 70 },
+    { name: 'Git', level: 85 },
+  ],
 
   certificates: [
     { name: '정보처리산업기사', meta: '한국산업인력공단 · 2025' },
@@ -376,7 +516,12 @@ const resume = {
   bootcamp: [
     { name: '코리아 IT 아카데미', meta: 'AI활용 소프트웨어 개발 및 응용 · (2021.11 - 2022.04)' },
   ],
-}
+})
+
+const sortedSkillList = computed(() => {
+  const defList = resume.value.skills;
+  return defList.sort((a, b) => b.level - a.level);
+})
 </script>
 
 <style>
@@ -388,6 +533,10 @@ const resume = {
   --line: #e5e7eb;
   --accent: #ff6a3d;
   --tag: #f3f4f6;
+  --org: #1f2937;
+  --role: #2563eb;
+  --role_ver2: #374151;
+  --period: #9ca3af;
 }
 
 * {
@@ -396,8 +545,7 @@ const resume = {
 
 body {
   margin: 0;
-  font-family: 'Noto Sans KR', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
-    sans-serif;
+  font-family: 'SUIT', sans-serif;
   background: var(--bg);
   color: var(--text);
   line-height: 1.55;
@@ -408,9 +556,16 @@ a {
 }
 
 .page {
-  max-width: 900px;
+  max-width: 1000px;
   margin: 28px auto;
   padding: 0 16px;
+}
+
+.page--split {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 16px;
+  align-items: start;
 }
 
 .paper {
@@ -419,6 +574,95 @@ a {
   border-radius: 14px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
   padding: 34px 34px 28px;
+}
+
+.paper--content {
+  padding: 28px 28px 28px;
+}
+
+.side {
+  background: #f7fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 20px 18px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.side__photo {
+  display: grid;
+  place-items: center;
+}
+
+.side__photo img {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center 20%;
+  border: 4px solid #dceef5;
+}
+
+.side__box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.side__title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+}
+
+.side__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #0f172a;
+  font-size: 12.5px;
+}
+
+.side__link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.side__link:hover {
+  text-decoration: underline;
+}
+
+.side__row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.side__muted {
+  color: #6b7280;
+  font-size: 11.5px;
+}
+
+.skills-list--side .skill-row {
+  gap: 8px;
+}
+
+.skills-list--side .skill-name {
+  flex: 0 0 84px;
+  font-weight: 600;
+  font-size: 12px;
+  color: #0f172a;
+}
+
+.skills-list--side .skill-bar {
+  height: 8px;
 }
 
 .header {
@@ -435,11 +679,34 @@ a {
   margin: 0 0 6px;
 }
 
+.name__highlight {
+  background: linear-gradient(135deg, #2b768f 0%, #1f2937 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  position: relative;
+  display: inline-block;
+}
+
+.name__suffix {
+  font-size: 0.75em;
+  font-weight: 500;
+  color: #6b7280;
+}
+
 .headline {
   margin: 0 0 10px;
   font-size: 13.5px;
   font-weight: 600;
   color: #374151;
+}
+
+.eyebrow {
+  margin: 0 0 4px;
+  font-size: 12px;
+  color: #2b768f;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 .meta {
@@ -521,16 +788,29 @@ a {
 .org {
   font-weight: 700;
   font-size: 13.5px;
+  color: var(--org);
 }
 
 .role {
   font-weight: 600;
   font-size: 13px;
-  color: #374151;
+  color: var(--role);
 }
 
 .period {
   font-size: 12px;
+  color: var(--period);
+}
+
+.school {
+  font-weight: 700;
+  font-size: 13.5px;
+  color: var(--org);
+}
+
+.major {
+  font-weight: 600;
+  font-size: 13px;
   color: var(--muted);
 }
 
@@ -545,6 +825,7 @@ a {
   padding-left: 18px;
   color: #374151;
   font-size: 13px;
+  line-height: 1.6;
 }
 
 .bullets li {
@@ -578,6 +859,50 @@ a {
   color: var(--muted);
 }
 
+.project-panels .v-expansion-panel-title {
+  padding: 10px 12px;
+}
+
+.project-panels .v-expansion-panel-text__wrapper {
+  padding: 8px 14px 14px;
+}
+
+.project-panel {
+  background-color: #f9fafb;
+  border-color: #e5e7eb;
+  color: #111827;
+}
+
+.project-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.project-label {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 6px;
+}
+
+.project-chip {
+  margin-left: auto;
+}
+
+.project-meta {
+  display: flex;
+  gap: 10px;
+  font-size: 12.5px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.bullets--tight {
+  margin-top: 4px;
+}
+
 .stack {
   margin: 8px 0 0;
   font-size: 12.5px;
@@ -604,19 +929,46 @@ a {
   font-weight: 700;
 }
 
-.tags {
+.skills-list {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 8px;
 }
 
-.tag {
-  background: var(--tag);
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  padding: 6px 10px;
+.skill-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.skill-name {
+  flex: 0 0 110px;
   font-size: 12.5px;
+  font-weight: 600;
   color: #374151;
+}
+
+.skill-bar {
+  flex: 1 1 auto;
+  position: relative;
+  height: 10px;
+  background: #e5e7eb;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.skill-bar__fill {
+  height: 100%;
+  background: #2b768f;
+  border-radius: 999px;
+  transition: width 0.2s ease;
+}
+
+.skill-level {
+  min-width: 36px;
+  text-align: right;
+  font-size: 11.5px;
+  color: #6b7280;
 }
 
 .link-list,
@@ -651,9 +1003,98 @@ a {
   margin-left: 8px;
 }
 
+.fab-container {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 200;
+}
+
+.fab-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  background: #0f172a;
+  color: #fff;
+  font-size: 18px;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.fab-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.22);
+  background: #111827;
+}
+
+.fab-menu {
+  position: relative;
+}
+
+.fab-list {
+  position: absolute;
+  bottom: 52px;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.14);
+  border-radius: 10px;
+  padding: 10px;
+  min-width: 120px;
+}
+
+.fab-list-item {
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 12.5px;
+  cursor: pointer;
+  text-align: left;
+  color: #0f172a;
+}
+
+.fab-list-item:hover {
+  background: #e2e8f0;
+}
+
+.fab-top {
+  background: #1e293b;
+}
+
+.fab-plus {
+  background: #2b768f;
+}
+
+.fab-hidden {
+  display: none;
+}
+
+@media print {
+  .fab-container {
+    display: none;
+  }
+}
+
 @media (max-width: 720px) {
+  .page--split {
+    grid-template-columns: 1fr;
+  }
+
   .paper {
     padding: 22px 18px 18px;
+  }
+
+  .paper--content {
+    padding: 20px 18px 18px;
   }
 
   .bottom {
