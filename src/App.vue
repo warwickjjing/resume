@@ -1081,16 +1081,100 @@ a {
 }
 
 @media (max-width: 720px) {
+  .page {
+    padding: 0 12px;
+    margin: 16px auto;
+  }
+
   .page--split {
     grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .side {
+    padding: 16px 14px;
+    gap: 14px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: start;
+    gap: 16px;
+  }
+
+  .side__photo {
+    grid-column: 1;
+    grid-row: 1 / -1;
+  }
+
+  .side__photo img {
+    width: 100px;
+    height: 100px;
+    border-width: 3px;
+  }
+
+  .side__box {
+    grid-column: 2;
+  }
+
+  .side__title {
+    font-size: 12px;
+  }
+
+  .side__list {
+    font-size: 11.5px;
+    gap: 5px;
+  }
+
+  .side__muted {
+    font-size: 10px;
+  }
+
+  .skills-list--side .skill-name {
+    flex: 0 0 75px;
+    font-size: 11px;
+  }
+
+  .skills-list--side .skill-bar {
+    height: 7px;
   }
 
   .paper {
-    padding: 22px 18px 18px;
+    padding: 20px 16px;
   }
 
   .paper--content {
-    padding: 20px 18px 18px;
+    padding: 20px 16px;
+  }
+
+  .name {
+    font-size: 24px;
+  }
+
+  .headline {
+    font-size: 13px;
+  }
+
+  .eyebrow {
+    font-size: 11px;
+  }
+
+  .section-title {
+    font-size: 13px;
+  }
+
+  .org, .school {
+    font-size: 13px;
+  }
+
+  .role, .major {
+    font-size: 12px;
+  }
+
+  .desc, .bullets {
+    font-size: 12px;
+  }
+
+  .project-name {
+    font-size: 12px;
   }
 
   .bottom {
