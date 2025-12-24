@@ -1,5 +1,5 @@
 <template>
-  <div class="page page--split">
+  <div class="page page--split" ref="resumeRef">
     <aside class="side">
       <div class="side__photo">
         <img src="../public/photo.jpg" alt="프로필 사진" />
@@ -43,7 +43,7 @@
       </div>
     </aside>
 
-    <main class="paper paper--content" aria-label="이력서" ref="resumeRef">
+    <main class="paper paper--content" aria-label="이력서">
       <header class="header">
         <div>
           <p class="eyebrow">서비스 전체 흐름을 이해하고 구현하는</p>
@@ -54,7 +54,7 @@
         </div>
 
         <div class="header-actions">
-          <button v-if="showPdf" class="pdf-btn" @click="downloadPdf">
+          <button v-if="showPdf && !pdfState" class="pdf-btn" @click="downloadPdf">
             PDF 다운로드
           </button>
         </div>
@@ -215,7 +215,7 @@ async function downloadPdf() {
 
   const opt = {
     margin: [10, 10, 10, 10],
-    filename: '서상훈_이력서.pdf',
+    filename: '서상훈_포트폴리오.pdf',
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: {
       scale: 2,
@@ -229,8 +229,8 @@ async function downloadPdf() {
   };
 
   await html2pdf().set(opt).from(element).save();
-  projectPanels.value = prevPanels;
   pdfState.value = false;
+  projectPanels.value = prevPanels;
   cnt.value = 0;
 }
 
@@ -680,12 +680,8 @@ a {
 }
 
 .name__highlight {
-  background: linear-gradient(135deg, #2b768f 0%, #1f2937 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  position: relative;
-  display: inline-block;
+  color: #1f2937;
+  font-weight: 800;
 }
 
 .name__suffix {
