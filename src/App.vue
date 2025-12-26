@@ -88,18 +88,10 @@
 
             <div v-if="exp.projects?.length" class="projects">
               <div class="project-label">[진행 프로젝트]</div>
-              <v-expansion-panels
-                multiple
+              <v-expansion-panels multiple
                 :model-value="pdfState ? exp.projects.map((_, idx) => idx) : (projectPanels[i] || [])"
-                @update:modelValue="val => projectPanels[i] = val"
-                class="project-panels"
-              >
-                <v-expansion-panel
-                  v-for="(p, pi) in exp.projects"
-                  :key="pi"
-                  :value="pi"
-                  class="project-panel"
-                >
+                @update:modelValue="val => projectPanels[i] = val" class="project-panels">
+                <v-expansion-panel v-for="(p, pi) in exp.projects" :key="pi" :value="pi" class="project-panel">
                   <v-expansion-panel-title>
                     <div class="project-title">
                       <span class="project-name">{{ p.name }}</span>
@@ -167,21 +159,11 @@
       <div class="fab-container" :class="{ 'fab-hidden': pdfState }" aria-label="빠른 이동">
         <button class="fab-btn fab-top" @click="scrollToTop" title="위로 가기">↑</button>
         <div class="fab-menu">
-          <button
-            class="fab-btn fab-plus"
-            @click="toggleFabMenu"
-            :aria-expanded="fabMenuOpen"
-            title="섹션 이동"
-          >
+          <button class="fab-btn fab-plus" @click="toggleFabMenu" :aria-expanded="fabMenuOpen" title="섹션 이동">
             +
           </button>
           <div v-if="fabMenuOpen" class="fab-list">
-            <button
-              v-for="sec in navSections"
-              :key="sec.id"
-              class="fab-list-item"
-              @click="scrollToSection(sec.id)"
-            >
+            <button v-for="sec in navSections" :key="sec.id" class="fab-list-item" @click="scrollToSection(sec.id)">
               {{ sec.label }}
             </button>
           </div>
@@ -389,25 +371,19 @@ const resume = ref({
           teamSize: '8명',
           involvement: '기획·설계 50% / 개발 70%',
           bullets: [
-            '삼성카드 모니모 원앱 데이터서비스포털 웹페이지 메인 개발',
-            '삼성과 연계되는 솔루션 사이에서 쿠키를 통한 중앙 인증·권한 게이트웨이 개발',
-            'JWT/Redis를 이용하여 사용자 인증 및 로그인 유지 관리',
-            'WebSocket를 통해 암호화 사용자 정보기반 로그인 방식 적용',
-            '권한/로그/배치 운영 도구 개발로 운영 효율 개선',
-            '프런트/백엔드 전반 개발 및 유지보수',
-            'PR을 통한 타 개발자 소스코드 리뷰 및 검수'
+            '삼성카드 모니모 원앱 내 데이터서비스포털의 메인 웹 페이지 설계 및 구현을 담당',
+            '포털을 단일 진입점(Single Entry Point)으로 구성하여 삼성 내부 시스템과 외부 솔루션을 연결하는 중앙 인증 허브(Authentication Gateway) 구조 설계',
+            '삼성 내부 인증 → 포털 인증 → 외부 솔루션 연계로 이어지는 다단계 인증 플로우를 정의하고 인증 책임을 단계별로 분리',
+            '포털에서 검증된 사용자에 대해 세션/토큰 기반 인증 정보를 발급하여 솔루션 간 신뢰 연계 구조(SSO 유사 구조) 구현',
+            'JWT와 Redis를 활용한 인증 정보 관리 및 로그인 세션 유지 전략 설계',
+            'WebSocket 기반 암호화 사용자 정보 전달 방식을 적용하여 로그인 보안성 강화',
+            '사용자 권한(Role/Policy)에 따라 접근 가능한 서비스·메뉴를 제어하는 권한 기반 접근 제어 체계 구현',
+            '권한·로그·배치 관리 도구를 직접 개발하여 운영 대응 시간 및 관리 비용 절감',
+            '프론트엔드(Vue3)부터 백엔드(Spring Boot)까지 전반적인 기능 개발 및 유지보수 담당',
+            'PR 기반 코드 리뷰 문화 정착을 통해 코드 품질과 팀 생산성 향상에 기여'
           ],
           stack: 'Vue3, TypeScript, Oracle, Redis, K8S, Spring Boot, Docker, Git',
-        },
-        // {
-        //   name: '검색/SEO 개선',
-        //   period: '2022.03 – 2023.06',
-        //   bullets: [
-        //     'SSR 도입 및 메타/스키마 마크업 적용',
-        //     '검색 노출 지표 개선 및 크롤링 오류 대응',
-        //   ],
-        //   stack: 'Vue3, TypeScript, Node.js, Google Search Console',
-        // },
+        }
       ],
     },
     {
@@ -417,22 +393,13 @@ const resume = ref({
       end: '2024-02',
       description: '보안 솔루션 관리 및 지점 보안 관리',
       highlights: [
-        '사내 정보보안 솔루션 운영 및 정책 관리',
-        '보안 로그 분석 및 이슈 대응',
-        '사내 정보보안 규칙 수립',
-        '소만사 DLP 솔루션을 활용한 보안 체계 강화',
-        '문서중앙화 시스템 관리'
+        '사내 보안 솔루션의 인증·접근 로그를 중앙에서 관리하여 보안 감사 및 이슈 추적 체계 구축',
+        '정보보안 정책 수립 및 운영 가이드 정리를 통해 내부 보안 기준 정착에 기여',
+        '보안 로그 분석을 통한 이상 징후 탐지 및 이슈 대응',
+        '소만사 DLP 솔루션을 활용한 내부 정보 유출 방지 체계 운영',
+        '문서중앙화 시스템 관리 및 사용자 권한 관리'
       ],
-      projects: [
-        // {
-        //   name: '사내 정보보안 규칙 수립',
-        //   period: calcPeriodYearsMonths('2023-12', '2024-02'),
-        //   teamSize: '2명',
-        //   involvement: '운영·정책 관리 30%',
-        //   bullets: ['개인정보 보호', '소만사 DLP 솔루션 관리', '문서중앙화 시스템 관리'],
-        //   stack: 'DLP API, 문서 중앙화',
-        // },
-      ],
+      projects: [],
     },
     {
       company: 'Epikar.corp',
@@ -455,11 +422,13 @@ const resume = ref({
           teamSize: '3명',
           involvement: '개발 45%',
           bullets: [
-            'BTS/MTS 딜러사 관리 웹페이지 제작',
-            'BTS/MTS 딜러사 관리 어플리케이션 제작',
-            '통계 관리 대시보드 제공',
-            '주 1회 KPT 회고 및 리뷰를 통해 개발 프로세스와 협업 방식을 지속적으로 개선',
-            '기존 Request/Response Map형식 → 객체 형식으로 전체 룰 적용'
+            '기존 팀 리드가 구축한 사내 서비스의 구조를 분석하고 신규 인력과 함께 인수·운영',
+            '기존 코드 구조 및 데이터 흐름을 파악하여 기능 수정 및 확장에 필요한 기술 문서 정리',
+            'Vue 기반 화면을 개선하고 사용자 요구사항을 반영한 신규 기능 개발',
+            'Spring Boot 기반 API 수정 및 기능 추가를 통해 서비스 안정성 확보',
+            '프론트엔드·백엔드 공통 모듈을 모노레포 형태로 관리하여 코드 중복 최소화',
+            '운영 중 발생하는 이슈를 원인 분석 후 재발 방지 관점에서 개선',
+            '요구사항을 기능 단위로 정리하여 티켓 기반으로 관리하며 Agile 방식으로 개발 진행'
           ],
           stack: 'Vue2, JavaScript, MySQL, Spring Boot, Jenkins, Docker',
         },
@@ -471,15 +440,13 @@ const resume = ref({
     {
       school: '인하공업전문대학교',
       major: '정보통신학과',
-      period: '2014.03 – 2017.02',
+      period: '2014-03 ~ 2017-02',
       grade: '4.09/4.5'
-      // note: '전문학사',
     },
     {
       school: '계양고등학교',
       major: '이과',
-      period: '2011.03 – 2014.02',
-      // note: '이과',
+      period: '2011-03 ~ 2014-02'
     },
   ],
 
@@ -508,7 +475,7 @@ const resume = ref({
   ],
 
   bootcamp: [
-    { name: '코리아 IT 아카데미', meta: 'AI활용 소프트웨어 개발 및 응용 · (2021.11 - 2022.04)' },
+    { name: '코리아 IT 아카데미', meta: 'AI활용 소프트웨어 개발 및 응용 · (2021-11 ~ 2022-04)' },
   ],
 })
 
@@ -1158,15 +1125,18 @@ a {
     font-size: 13px;
   }
 
-  .org, .school {
+  .org,
+  .school {
     font-size: 13px;
   }
 
-  .role, .major {
+  .role,
+  .major {
     font-size: 12px;
   }
 
-  .desc, .bullets {
+  .desc,
+  .bullets {
     font-size: 12px;
   }
 
