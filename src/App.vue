@@ -28,17 +28,10 @@
       </div>
       <div v-if="resume.skills?.length" class="side__box">
         <h2 class="side__title">기술 숙련도</h2>
-        <div class="skills-list skills-list--side">
-          <div v-for="(s, i) in sortedSkillList" :key="i" class="skill-row">
-            <span class="skill-name">{{ s.name }}</span>
-            <div class="skill-bar">
-              <div
-                class="skill-bar__fill"
-                :style="{ width: `${clampLevel(s.level)}%` }"
-                aria-hidden="true"
-              ></div>
-            </div>
-          </div>
+        <div class="skills-badges">
+          <span v-for="(s, i) in sortedSkillList" :key="i" class="skill-badge">
+            {{ s.name }}
+          </span>
         </div>
       </div>
     </aside>
@@ -287,9 +280,9 @@ function calcPeriodYearsMonths(startDateStr, endDateStr = null) {
   const total = years > 0 ? `${years}년 ${months}개월` : `${months}개월`
 
   if (endDateStr) {
-    return `${startDateStr} - ${endDateStr} (${total})`;
+    return `${startDateStr} ~ ${endDateStr} (${total})`;
   } else {
-    return `${startDateStr} - 재직중 (${total})`;
+    return `${startDateStr} ~ 재직중 (${total})`;
   }
 }
 
@@ -311,7 +304,7 @@ function formatPeriod(start, end = null) {
   const ym = years > 0 ? `${years}년 ${months}개월` : `${months}개월`
   const endDate = end ? end : '재직중';
 
-  return `${start} - ${endDate} (${ym})`;
+  return `${start} ~ ${endDate} (${ym})`;
 }
 
 const experiencesComputed = computed(() =>
@@ -337,10 +330,10 @@ const navSections = computed(() => [
   { id: 'languages', label: '외국어', enabled: resume.value.languages?.length },
 ].filter(s => s.enabled))
 
-function clampLevel(level) {
-  if (level === undefined || level === null || isNaN(level)) return 0;
-  return Math.min(100, Math.max(0, Number(level)));
-}
+// function clampLevel(level) {
+//   if (level === undefined || level === null || isNaN(level)) return 0;
+//   return Math.min(100, Math.max(0, Number(level)));
+// }
 
 const headlinePeriod = computed(() => {
   const totalMonths = experiencesComputed.value.reduce(
@@ -397,11 +390,13 @@ const resume = ref({
           involvement: '기획·설계 50% / 개발 70%',
           bullets: [
             '삼성카드 모니모 원앱 데이터서비스포털 웹페이지 메인 개발',
+            '삼성과 연계되는 솔루션 사이에서 쿠키를 통한 중앙 인증·권한 게이트웨이 개발',
+            'JWT/Redis를 이용하여 사용자 인증 및 로그인 유지 관리',
+            'WebSocket를 통해 암호화 사용자 정보기반 로그인 방식 적용',
             '권한/로그/배치 운영 도구 개발로 운영 효율 개선',
             '프런트/백엔드 전반 개발 및 유지보수',
-            '타 개발자 소스코드 리뷰 및 검수',
+            'PR을 통한 타 개발자 소스코드 리뷰 및 검수'
           ],
-          isOpen: true,
           stack: 'Vue3, TypeScript, Oracle, Redis, K8S, Spring Boot, Docker, Git',
         },
         // {
@@ -425,7 +420,7 @@ const resume = ref({
         '사내 정보보안 솔루션 운영 및 정책 관리',
         '보안 로그 분석 및 이슈 대응',
         '사내 정보보안 규칙 수립',
-        '소만사 DLP 솔루션 관리',
+        '소만사 DLP 솔루션을 활용한 보안 체계 강화',
         '문서중앙화 시스템 관리'
       ],
       projects: [
@@ -435,7 +430,6 @@ const resume = ref({
         //   teamSize: '2명',
         //   involvement: '운영·정책 관리 30%',
         //   bullets: ['개인정보 보호', '소만사 DLP 솔루션 관리', '문서중앙화 시스템 관리'],
-        //   isOpen: false,
         //   stack: 'DLP API, 문서 중앙화',
         // },
       ],
@@ -450,7 +444,7 @@ const resume = ref({
         '기존 팀 리드가 구축한 사내 서비스의 구조를 분석하고 인수',
         'Vue 기반 화면 개발 및 기능 개선',
         'Spring Boot 기반 API 수정 및 신규 기능 개발',
-        '신입 동기 개발자와 협업하여 기능 구현 및 코드 정리',
+        '모노레포를 통한 소스코드 공통화',
         '운영 중 발생하는 이슈 대응 및 추가 요구사항 반영',
         '요구사항을 기능 단위로 정리하여 티켓 기반으로 관리하며 Agile 방식으로 개발 진행'
       ],
@@ -464,9 +458,9 @@ const resume = ref({
             'BTS/MTS 딜러사 관리 웹페이지 제작',
             'BTS/MTS 딜러사 관리 어플리케이션 제작',
             '통계 관리 대시보드 제공',
-            '주 1회 KPT 회고 및 리뷰를 통해 개발 프로세스와 협업 방식을 지속적으로 개선'
+            '주 1회 KPT 회고 및 리뷰를 통해 개발 프로세스와 협업 방식을 지속적으로 개선',
+            '기존 Request/Response Map형식 → 객체 형식으로 전체 룰 적용'
           ],
-          isOpen: false,
           stack: 'Vue2, JavaScript, MySQL, Spring Boot, Jenkins, Docker',
         },
       ],
@@ -650,19 +644,22 @@ a {
   font-size: 11.5px;
 }
 
-.skills-list--side .skill-row {
-  gap: 8px;
+.skills-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
-.skills-list--side .skill-name {
-  flex: 0 0 84px;
+.skill-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  background: var(--tag);
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 11.5px;
   font-weight: 600;
-  font-size: 12px;
   color: #0f172a;
-}
-
-.skills-list--side .skill-bar {
-  height: 8px;
+  line-height: 1.4;
 }
 
 .header {
@@ -1128,13 +1125,13 @@ a {
     font-size: 10px;
   }
 
-  .skills-list--side .skill-name {
-    flex: 0 0 75px;
-    font-size: 11px;
+  .skills-badges {
+    gap: 5px;
   }
 
-  .skills-list--side .skill-bar {
-    height: 7px;
+  .skill-badge {
+    font-size: 10.5px;
+    padding: 3px 8px;
   }
 
   .paper {
