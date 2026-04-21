@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>서상훈 — FullStack Developer</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --g:#00ff88;--gd:#00cc6a;--g10:rgba(0,255,136,0.1);--g20:rgba(0,255,136,0.2);
+  --a:#ffb347;--b:#38bdf8;--p:#a78bfa;--r:#f472b6;
+  --bg:#030608;--bg2:#060c12;--bg3:#0a1220;--bg4:#0d1828;
+  --br:rgba(0,255,136,0.12);--br2:rgba(0,255,136,0.28);--br3:rgba(0,255,136,0.5);
+  --t:#b0bec5;--tb:#ecf0f1;--tm:#546e7a;
+  --mono:'JetBrains Mono',monospace;--disp:'Syne',sans-serif
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--t);font-family:var(--mono);font-size:14px;line-height:1.7;overflow-x:hidden;cursor:none}
+
+/* SCROLL PROGRESS */
+#progress{position:fixed;top:0;left:0;height:2px;background:linear-gradient(90deg,var(--g),var(--b),var(--p));z-index:999;width:0%;transition:width 0.1s linear;box-shadow:0 0 8px var(--g)}
+
+/* CURSOR */
+#cur{position:fixed;width:10px;height:10px;background:var(--g);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);mix-blend-mode:screen;transition:width 0.2s,height 0.2s}
+#cur-ring{position:fixed;width:38px;height:38px;border:1px solid rgba(0,255,136,0.35);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%)}
+.trail-dot{position:fixed;width:4px;height:4px;background:var(--g);border-radius:50%;pointer-events:none;z-index:9997;transform:translate(-50%,-50%);opacity:0}
+
+/* CANVAS */
+#bg-canvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
+
+/* VIGNETTE + SCANLINES */
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at center,transparent 35%,rgba(0,0,0,0.75) 100%);pointer-events:none;z-index:1}
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.05) 3px,rgba(0,0,0,0.05) 4px);pointer-events:none;z-index:1}
+
+/* NOISE */
+#noise{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:0.03}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:500;padding:16px 52px;display:flex;justify-content:space-between;align-items:center;background:rgba(3,6,8,0.85);backdrop-filter:blur(28px) saturate(1.8);border-bottom:1px solid var(--br)}
+.logo{font-family:var(--disp);font-weight:800;font-size:18px;color:var(--g);letter-spacing:-0.5px;text-decoration:none;text-shadow:0 0 20px rgba(0,255,136,0.35)}
+.logo em{color:var(--t);font-style:normal}
+.nav-c{display:flex;align-items:center;gap:36px}
+.nav-links{display:flex;gap:28px}
+.nav-links a{color:var(--tm);text-decoration:none;font-size:11px;letter-spacing:0.18em;text-transform:uppercase;transition:color 0.2s;position:relative;cursor:none}
+.nav-links a::after{content:'';position:absolute;bottom:-4px;left:0;width:0;height:1px;background:var(--g);box-shadow:0 0 6px var(--g);transition:width 0.3s}
+.nav-links a:hover{color:var(--g)}
+.nav-links a:hover::after{width:100%}
+.status-dot{width:7px;height:7px;background:var(--g);border-radius:50%;animation:pulse 2s infinite;box-shadow:0 0 8px var(--g)}
+.status-txt{font-size:11px;color:var(--tm);display:flex;align-items:center;gap:8px}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(0,255,136,0.5)}50%{box-shadow:0 0 0 8px transparent}}
+
+/* HERO */
+.hero{position:relative;z-index:2;min-height:100vh;display:flex;align-items:center;padding:110px 52px 70px;max-width:1280px;margin:0 auto}
+.hero-grid{display:grid;grid-template-columns:1fr 460px;gap:64px;align-items:center;width:100%}
+
+.hero-eyebrow{font-size:11px;letter-spacing:0.3em;text-transform:uppercase;color:var(--g);margin-bottom:20px;display:flex;align-items:center;gap:12px;opacity:0;animation:fadeUp 0.8s 0.2s forwards}
+.hero-eyebrow::before{content:'';display:block;width:40px;height:1px;background:linear-gradient(90deg,var(--g),transparent)}
+
+.name-block{margin-bottom:24px;opacity:0;animation:fadeUp 0.9s 0.4s forwards}
+.name-line1{font-family:var(--disp);font-size:clamp(64px,9vw,120px);font-weight:800;line-height:0.9;color:var(--tb);letter-spacing:-5px;display:block}
+.name-line2{font-family:var(--disp);font-size:clamp(64px,9vw,120px);font-weight:800;line-height:0.9;color:transparent;-webkit-text-stroke:1px rgba(0,255,136,0.4);letter-spacing:-5px;display:block}
+
+.hero-tagline{font-size:15px;color:var(--t);max-width:500px;line-height:1.85;margin-bottom:32px;opacity:0;animation:fadeUp 0.9s 0.6s forwards}
+.hero-tagline strong{color:var(--g);font-weight:500}
+
+.term{background:var(--bg2);border:1px solid var(--br);border-radius:8px;overflow:hidden;opacity:0;animation:fadeUp 0.9s 0.8s forwards;box-shadow:0 0 60px rgba(0,255,136,0.04)}
+.term-bar{padding:11px 16px;border-bottom:1px solid var(--br);display:flex;align-items:center;gap:8px;background:rgba(0,255,136,0.02)}
+.dd{width:11px;height:11px;border-radius:50%}.dd.r{background:#ff5f56}.dd.y{background:#ffbd2e}.dd.g{background:#27c93f}
+.term-title{font-size:11px;color:var(--tm);margin-left:8px;letter-spacing:0.05em}
+.term-body{padding:18px 22px}
+.tl{margin-bottom:3px;display:flex;gap:10px;align-items:flex-start}
+.pr{color:var(--g);min-width:14px;font-size:13px}
+.tc{font-size:12px;color:var(--tb);line-height:1.7}
+.to{font-size:12px;color:var(--tm);line-height:1.7;padding-left:24px}
+.to .hl{color:var(--g)}.to .hlb{color:var(--b)}.to .hlp{color:var(--p)}.to .hla{color:var(--a)}
+.blink{display:inline-block;width:8px;height:13px;background:var(--g);animation:cb 1s step-end infinite;vertical-align:middle;margin-left:2px;border-radius:1px}
+@keyframes cb{50%{opacity:0}}
+
+.cta-row{display:flex;gap:14px;margin-top:28px;flex-wrap:wrap;opacity:0;animation:fadeUp 0.9s 1s forwards}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:13px 28px;font-family:var(--mono);font-size:12px;letter-spacing:0.1em;text-decoration:none;border-radius:4px;transition:all 0.3s;cursor:none;font-weight:500;position:relative}
+.btn-p{background:var(--g);color:#000;border:none}
+.btn-p:hover{background:var(--gd);box-shadow:0 0 28px rgba(0,255,136,0.45);transform:translateY(-3px)}
+.btn-s{background:transparent;color:var(--t);border:1px solid var(--br2)}
+.btn-s:hover{border-color:var(--g);color:var(--g);box-shadow:0 0 20px rgba(0,255,136,0.12);transform:translateY(-3px)}
+
+/* STAT DECK */
+.hero-right{opacity:0;animation:fadeLeft 1s 0.7s forwards}
+.stat-deck{display:flex;flex-direction:column;gap:12px}
+.stat-card{background:var(--bg2);border:1px solid var(--br);border-radius:8px;padding:20px 24px;transition:all 0.35s;position:relative;overflow:hidden;cursor:none}
+.stat-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,255,136,0.04),transparent);opacity:0;transition:opacity 0.3s}
+.stat-card:hover{border-color:var(--br2);transform:translateX(-6px);box-shadow:-6px 0 24px rgba(0,255,136,0.08)}
+.stat-card:hover::before{opacity:1}
+.sc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.sc-label{font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--tm)}
+.sc-num{font-family:var(--disp);font-size:38px;font-weight:800;line-height:1;letter-spacing:-2px}
+.sc-num.green{color:var(--g);text-shadow:0 0 16px rgba(0,255,136,0.3)}
+.sc-num.blue{color:var(--b);text-shadow:0 0 16px rgba(56,189,248,0.3)}
+.sc-num.purple{color:var(--p);text-shadow:0 0 16px rgba(167,139,250,0.3)}
+.sc-num.amber{color:var(--a);text-shadow:0 0 16px rgba(255,179,71,0.3)}
+.sc-bar{height:2px;background:var(--bg3);border-radius:1px;margin-top:10px;overflow:hidden}
+.sc-fill{height:100%;border-radius:1px;animation:barGrow 1.5s 1.5s ease both}
+@keyframes barGrow{from{width:0}to{width:var(--w,100%)}}
+.sc-fill.green{background:linear-gradient(90deg,var(--g),var(--gd));box-shadow:0 0 6px var(--g)}
+.sc-fill.blue{background:linear-gradient(90deg,var(--b),#0ea5e9);box-shadow:0 0 6px var(--b)}
+.sc-fill.purple{background:linear-gradient(90deg,var(--p),#8b5cf6);box-shadow:0 0 6px var(--p)}
+.sc-fill.amber{background:linear-gradient(90deg,var(--a),#f59e0b);box-shadow:0 0 6px var(--a)}
+.sc-desc{font-size:11px;color:var(--tm);margin-top:6px}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeLeft{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+
+/* SECTION COMMONS */
+.divider{height:1px;background:linear-gradient(90deg,transparent,var(--br),transparent)}
+.sec{padding:80px 52px;max-width:1280px;margin:0 auto;position:relative;z-index:2}
+.sec-head{display:flex;align-items:center;gap:16px;margin-bottom:56px}
+.sec-tag{font-size:10px;letter-spacing:0.24em;text-transform:uppercase;color:var(--g);background:var(--g10);border:1px solid var(--br2);padding:5px 14px;border-radius:2px;text-shadow:0 0 12px rgba(0,255,136,0.4)}
+.sec-title{font-family:var(--disp);font-size:38px;font-weight:800;color:var(--tb);letter-spacing:-1.5px}
+
+/* CORE COMPETENCY */
+.comp-cols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.comp-col{background:var(--bg2);border-radius:7px;padding:24px 20px;border:1px solid rgba(0,255,136,0.1);transition:all 0.35s;position:relative;overflow:hidden;cursor:none}
+.comp-col::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;opacity:0;transition:opacity 0.35s}
+.comp-col:hover{border-color:rgba(0,255,136,0.28);transform:translateY(-6px);box-shadow:0 20px 50px rgba(0,0,0,0.5)}
+.comp-col:hover::before{opacity:1}
+.cc1::before{background:linear-gradient(90deg,var(--b),var(--g))}
+.cc2::before{background:linear-gradient(90deg,var(--g),var(--p))}
+.cc3::before{background:linear-gradient(90deg,var(--p),var(--a))}
+.cc-num{font-size:10px;letter-spacing:0.2em;color:rgba(0,255,136,0.2);margin-bottom:14px}
+.cc-icon{font-size:26px;margin-bottom:14px;display:block;line-height:1}
+.cc-title{font-family:var(--disp);font-size:16px;font-weight:700;margin-bottom:6px}
+.cc1 .cc-title{color:var(--b)}.cc2 .cc-title{color:var(--g)}.cc3 .cc-title{color:var(--p)}
+.cc-sub{font-size:11px;color:var(--tm);margin-bottom:18px;line-height:1.6}
+.cc-items{list-style:none;display:flex;flex-direction:column;gap:7px;margin-bottom:20px}
+.cc-items li{font-size:11px;color:var(--t);padding-left:14px;position:relative;line-height:1.55}
+.cc-items li::before{content:'▸';position:absolute;left:0;font-size:10px;top:2px}
+.cc1 .cc-items li::before{color:var(--b)}
+.cc2 .cc-items li::before{color:var(--g)}
+.cc3 .cc-items li::before{color:var(--p)}
+.cc-proof{border-top:1px solid rgba(255,255,255,0.05);padding-top:14px}
+.cc-proof-label{font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:rgba(255,255,255,0.15);margin-bottom:6px}
+.cc-proof-text{font-size:11px;line-height:1.55}
+.cc1 .cc-proof-text{color:rgba(56,189,248,0.65)}
+.cc2 .cc-proof-text{color:rgba(0,255,136,0.65)}
+.cc3 .cc-proof-text{color:rgba(167,139,250,0.65)}
+
+/* DECISION CARDS */
+.d-card{background:var(--bg2);border:1px solid var(--br);border-radius:8px;padding:32px 36px;margin-bottom:14px;position:relative;overflow:hidden;transition:all 0.35s;cursor:none}
+.d-card::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:linear-gradient(180deg,var(--g),var(--b),var(--p));opacity:0;transition:opacity 0.3s}
+.d-card::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--g),transparent);opacity:0;transition:opacity 0.3s}
+.d-glow{position:absolute;top:-50%;right:-20%;width:320px;height:320px;background:radial-gradient(circle,rgba(0,255,136,0.04) 0%,transparent 70%);opacity:0;transition:opacity 0.4s;pointer-events:none}
+.d-card:hover{border-color:var(--br2);transform:translateX(6px);box-shadow:0 8px 40px rgba(0,0,0,0.4)}
+.d-card:hover::before,.d-card:hover::after,.d-card:hover .d-glow{opacity:1}
+/* PULSE ANIMATION */
+.d-card{animation:cardPulse 6s ease-in-out infinite}
+.d-card:nth-child(2){animation-delay:2s}
+.d-card:nth-child(3){animation-delay:4s}
+@keyframes cardPulse{0%,90%,100%{box-shadow:none}95%{box-shadow:0 0 0 1px rgba(0,255,136,0.15),0 0 20px rgba(0,255,136,0.05)}}
+.d-meta{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.d-ctx{font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--a)}
+.d-dot{width:3px;height:3px;background:var(--tm);border-radius:50%}
+.d-num{font-size:10px;color:var(--tm)}
+.d-title{font-family:var(--disp);font-size:20px;font-weight:700;color:var(--tb);margin-bottom:20px;line-height:1.3}
+.paar{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.pi{background:var(--bg3);border:1px solid var(--br);border-radius:5px;padding:13px 16px;transition:border-color 0.2s}
+.pi:hover{border-color:var(--br2)}
+.pk{font-size:10px;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:7px;display:flex;align-items:center;gap:7px}
+.pk svg{width:7px;height:7px;flex-shrink:0}
+.pk.P{color:var(--a)}.pk.A1{color:var(--b)}.pk.A2{color:var(--g)}.pk.R{color:var(--p)}
+.pv{font-size:12px;color:var(--t);line-height:1.65}
+.vs-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:14px 0 0}
+.vrej{padding:4px 10px;font-size:12px;color:#f87171;background:rgba(248,113,113,0.07);border:1px solid rgba(248,113,113,0.18);border-radius:2px;text-decoration:line-through;opacity:0.75}
+.vsep{font-size:10px;color:var(--tm);letter-spacing:0.1em}
+.vok{padding:4px 10px;font-size:12px;color:var(--g);background:rgba(0,255,136,0.06);border:1px solid rgba(0,255,136,0.22);border-radius:2px}
+.rbadge{display:inline-flex;align-items:center;gap:7px;margin-top:13px;padding:7px 16px;font-size:12px;color:var(--g);background:rgba(0,255,136,0.04);border:1px solid var(--br2);border-radius:2px}
+
+/* EXP */
+.exp-item{display:grid;grid-template-columns:220px 1fr;gap:40px;padding:40px 0;border-bottom:1px solid var(--br);transition:all 0.3s}
+.exp-item:last-child{border-bottom:none}
+.exp-item:hover .e-company{color:var(--g);text-shadow:0 0 12px rgba(0,255,136,0.3)}
+.e-company{font-family:var(--disp);font-size:17px;font-weight:700;color:var(--tb);transition:all 0.3s}
+.e-period{font-size:11px;color:var(--tm);margin:4px 0 12px;letter-spacing:0.04em}
+.ebadge{display:inline-block;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;background:var(--g10);border:1px solid var(--br2);color:var(--g);padding:3px 10px;border-radius:2px}
+.ebadge.amber{background:rgba(255,179,71,0.08);border-color:rgba(255,179,71,0.25);color:var(--a)}
+.e-title{font-family:var(--disp);font-size:22px;font-weight:700;color:var(--tb);margin-bottom:6px;line-height:1.25}
+.e-role{font-size:12px;color:var(--a);margin-bottom:18px;letter-spacing:0.05em}
+.ebullets{list-style:none;display:flex;flex-direction:column;gap:9px}
+.ebullets li{font-size:13px;color:var(--t);padding-left:22px;position:relative;line-height:1.65}
+.ebullets li::before{content:'▸';position:absolute;left:0;color:var(--g);font-size:11px;top:3px;text-shadow:0 0 6px rgba(0,255,136,0.5)}
+.etags{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.etag{font-size:11px;padding:4px 10px;border:1px solid var(--br);border-radius:2px;color:var(--tm);transition:all 0.2s;cursor:none}
+.etag:hover{border-color:var(--g);color:var(--g);background:var(--g10);box-shadow:0 0 10px rgba(0,255,136,0.1)}
+
+/* SKILLS */
+.skill-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.sg{background:var(--bg2);border:1px solid var(--br);border-radius:8px;padding:22px 26px;transition:all 0.3s;position:relative;overflow:hidden}
+.sg::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,255,136,0.03),transparent 60%);opacity:0;transition:opacity 0.3s}
+.sg:hover{border-color:var(--br2);transform:translateY(-5px);box-shadow:0 16px 40px rgba(0,0,0,0.4)}
+.sg:hover::after{opacity:1}
+.sg-title{font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:var(--g);margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--br);text-shadow:0 0 10px rgba(0,255,136,0.3)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font-size:12px;padding:5px 12px;border:1px solid var(--br);border-radius:3px;color:var(--t);background:var(--bg3);transition:all 0.2s;cursor:none}
+.chip:hover{border-color:var(--g);color:var(--g);background:var(--g10);transform:translateY(-2px)}
+
+/* PROJECT */
+.proj-card{background:var(--bg2);border:1px solid var(--br);border-radius:8px;padding:36px;display:grid;grid-template-columns:1fr auto;gap:28px;align-items:start;transition:all 0.35s;position:relative;overflow:hidden;cursor:none}
+.proj-card::before{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--g),var(--b),var(--p),var(--r));transform:scaleX(0);transform-origin:left;transition:transform 0.5s cubic-bezier(0.4,0,0.2,1)}
+.proj-card:hover{border-color:var(--br2);transform:translateY(-5px);box-shadow:0 24px 60px rgba(0,0,0,0.5)}
+.proj-card:hover::before{transform:scaleX(1)}
+.p-ctx{font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:var(--a);margin-bottom:8px}
+.p-title{font-family:var(--disp);font-size:21px;font-weight:700;color:var(--tb);margin-bottom:12px}
+.p-desc{font-size:13px;color:var(--t);line-height:1.8;margin-bottom:16px}
+.p-link{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--b);text-decoration:none;border-bottom:1px solid rgba(56,189,248,0.3);padding-bottom:1px;transition:all 0.2s;white-space:nowrap;cursor:none}
+.p-link:hover{color:var(--g);border-color:var(--g)}
+
+/* CONTACT */
+.contact-outer{position:relative;z-index:2;background:var(--bg2);border-top:1px solid var(--br);padding:80px 52px;overflow:hidden}
+.contact-bg-txt{position:absolute;right:-60px;top:50%;transform:translateY(-50%);font-family:var(--disp);font-size:200px;font-weight:800;color:rgba(0,255,136,0.02);letter-spacing:-14px;pointer-events:none;white-space:nowrap;line-height:1}
+.contact-inner{max-width:1280px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:40px;flex-wrap:wrap;position:relative;z-index:1}
+.c-big{font-family:var(--disp);font-size:44px;font-weight:800;color:var(--tb);letter-spacing:-2px;margin-bottom:10px;line-height:1.1}
+.c-big span{color:var(--g);text-shadow:0 0 20px rgba(0,255,136,0.4)}
+.c-sub{font-size:13px;color:var(--tm)}
+
+footer{position:relative;z-index:2;text-align:center;padding:28px;font-size:11px;color:var(--tm);letter-spacing:0.14em;border-top:1px solid var(--br)}
+footer span{color:var(--g)}
+
+/* REVEAL */
+.rev{opacity:0;transform:translateY(32px);transition:opacity 0.7s ease,transform 0.7s ease}
+.rev.on{opacity:1;transform:translateY(0)}
+</style>
+
+<!-- NOISE SVG -->
+<svg id="noise" xmlns="http://www.w3.org/2000/svg"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="4" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
+
+<div id="progress"></div>
+<canvas id="bg-canvas"></canvas>
+<div id="cur"></div>
+<div id="cur-ring"></div>
+
+<nav>
+  <a href="#" class="logo">서상훈<em>.dev</em></a>
+  <div class="nav-c">
+    <div class="nav-links">
+      <a href="#competency">역량</a>
+      <a href="#decisions">결정로그</a>
+      <a href="#experience">경력</a>
+      <a href="#skills">기술</a>
+      <a href="#contact">연락</a>
+    </div>
+    <div class="status-txt"><div class="status-dot"></div>Seoul · Available</div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-grid">
+    <div>
+      <div class="hero-eyebrow">FullStack Developer · 3년 7개월+</div>
+      <div class="name-block">
+        <span class="name-line1" id="name1">서상훈</span>
+        <span class="name-line2">.dev</span>
+      </div>
+      <p class="hero-tagline">
+        기능 구현 너머, <strong>왜 이 구조인가</strong>를 판단합니다.<br>
+        삼성카드 엔터프라이즈 서비스에서 인증 아키텍처를<br>
+        설계하고 팀 기술 기준을 확립한 풀스택 엔지니어.
+      </p>
+      <div class="term">
+        <div class="term-bar">
+          <div class="dd r"></div><div class="dd y"></div><div class="dd g"></div>
+          <span class="term-title">seo@portfolio — zsh</span>
+        </div>
+        <div class="term-body">
+          <div class="tl"><span class="pr">$</span><span class="tc">describe --role</span></div>
+          <div class="tl"><span style="width:14px"></span><span class="to"><span class="hl">인증 아키텍처 설계</span> · <span class="hlb">테크 리드</span> · <span class="hlp">풀스택</span></span></div>
+          <div class="tl" style="margin-top:8px"><span class="pr">$</span><span class="tc">ls ./achievements</span></div>
+          <div class="tl"><span style="width:14px"></span><span class="to"><span class="hl">api_200+</span>  <span class="hlb">sso_4solutions</span>  <span class="hlp">screen_30</span>  <span class="hla">tech_lead</span></span></div>
+          <div class="tl" style="margin-top:8px"><span class="pr">$</span><span class="tc">echo $PHILOSOPHY</span></div>
+          <div class="tl"><span style="width:14px"></span><span class="to">"결정의 흔적이 곧 역량이다" <span class="blink"></span></span></div>
+        </div>
+      </div>
+      <div class="cta-row">
+        <a href="#competency" class="btn btn-p" id="btn-primary">역량 보기 ↓</a>
+        <a href="mailto:seosh9369@gmail.com" class="btn btn-s" id="btn-secondary">seosh9369@gmail.com</a>
+      </div>
+    </div>
+    <div class="hero-right">
+      <div class="stat-deck">
+        <div class="stat-card">
+          <div class="sc-top"><span class="sc-label">API 설계·개발</span></div>
+          <div class="sc-num green"><span class="cnt" data-val="200">0</span>+</div>
+          <div class="sc-desc">삼성카드 포털 전체 엔드포인트</div>
+          <div class="sc-bar"><div class="sc-fill green" style="--w:95%"></div></div>
+        </div>
+        <div class="stat-card">
+          <div class="sc-top"><span class="sc-label">솔루션 SSO 통합</span></div>
+          <div class="sc-num blue"><span class="cnt" data-val="4">0</span>개</div>
+          <div class="sc-desc">외부 솔루션 단일 인증 허브 통합</div>
+          <div class="sc-bar"><div class="sc-fill blue" style="--w:40%"></div></div>
+        </div>
+        <div class="stat-card">
+          <div class="sc-top"><span class="sc-label">화면 설계·개발</span></div>
+          <div class="sc-num purple"><span class="cnt" data-val="30">0</span>개</div>
+          <div class="sc-desc">URL 기준 화면 + 공통 컴포넌트</div>
+          <div class="sc-bar"><div class="sc-fill purple" style="--w:70%"></div></div>
+        </div>
+        <div class="stat-card">
+          <div class="sc-top"><span class="sc-label">마이그레이션 무결성</span></div>
+          <div class="sc-num amber"><span class="cnt" data-val="100">0</span>%</div>
+          <div class="sc-desc">API 동작 무결성 유지율</div>
+          <div class="sc-bar"><div class="sc-fill amber" style="--w:100%"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- CORE COMPETENCY -->
+<section class="sec" id="competency">
+  <div class="sec-head rev">
+    <span class="sec-tag">Core Competency</span>
+    <h2 class="sec-title">단순 구현이 아닌, 세 가지를 동시에 합니다</h2>
+  </div>
+  <div class="comp-cols rev">
+    <div class="comp-col cc1">
+      <div class="cc-num">01</div>
+      <span class="cc-icon">🏗️</span>
+      <div class="cc-title">설계한다</div>
+      <div class="cc-sub">기능 구현 전,<br>왜 이 구조인지를 먼저 정한다</div>
+      <ul class="cc-items">
+        <li>인증 게이트웨이 직접 설계</li>
+        <li>단일 진입점 아키텍처 구성</li>
+        <li>마이그레이션 무결성 전략</li>
+        <li>서버 환경 설정 전담</li>
+      </ul>
+      <div class="cc-proof">
+        <div class="cc-proof-label">대표 경험</div>
+        <div class="cc-proof-text">삼성카드 포털 인증 허브 구조 직접 설계 · SSO 4개 솔루션 통합</div>
+      </div>
+    </div>
+    <div class="comp-col cc2">
+      <div class="cc-num">02</div>
+      <span class="cc-icon">⚡</span>
+      <div class="cc-title">판단한다</div>
+      <div class="cc-sub">선택지를 비교하고,<br>근거 있는 결정을 남긴다</div>
+      <ul class="cc-items">
+        <li>OAuth2 vs 자체 토큰 비교</li>
+        <li>CDW vs RO-DB 분석·결정</li>
+        <li>실시간 vs 배치 트레이드오프</li>
+        <li>결정 근거를 문서로 추적</li>
+      </ul>
+      <div class="cc-proof">
+        <div class="cc-proof-label">대표 경험</div>
+        <div class="cc-proof-text">포털 자체 토큰 발급 방식 채택 · CSV 배치 자동화 전환 결정</div>
+      </div>
+    </div>
+    <div class="comp-col cc3">
+      <div class="cc-num">03</div>
+      <span class="cc-icon">🎯</span>
+      <div class="cc-title">기준을 만든다</div>
+      <div class="cc-sub">팀 전체가 따를 수 있는<br>일관된 기준을 정착시킨다</div>
+      <ul class="cc-items">
+        <li>개발 컨벤션·룰 수립 주도</li>
+        <li>PR 코드리뷰 문화 정착</li>
+        <li>공통 컴포넌트 라이브러리화</li>
+        <li>권한·로그 관리 도구 개발</li>
+      </ul>
+      <div class="cc-proof">
+        <div class="cc-proof-label">대표 경험</div>
+        <div class="cc-proof-text">PR 코드리뷰 문화 도입 주도 · 팀 전체 개발 컨벤션 기준 수립</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- DECISION LOG -->
+<section class="sec" id="decisions">
+  <div class="sec-head rev">
+    <span class="sec-tag">Decision Log</span>
+    <h2 class="sec-title">고민하고, 선택하고, 검증했습니다</h2>
+  </div>
+  <p class="rev" style="font-size:13px;color:var(--tm);max-width:580px;margin-bottom:48px;line-height:1.9">
+    구현 목록이 아니라 의사결정의 흔적입니다.<br>어떤 선택지를 검토했고, 왜 이 구조를 골랐으며, 결과는 어떠했는지를 기록합니다.
+  </p>
+  <div class="d-card rev">
+    <div class="d-glow"></div>
+    <div class="d-meta"><span class="d-ctx">삼성카드 · 인증 아키텍처</span><span class="d-dot"></span><span class="d-num">01</span></div>
+    <div class="d-title">4개 외부 솔루션을 어떻게 하나의 인증으로 묶을 것인가</div>
+    <div class="paar">
+      <div class="pi"><div class="pk P"><svg viewBox="0 0 7 7" fill="currentColor"><rect width="7" height="7" rx="1"/></svg>Problem</div><div class="pv">외부 솔루션마다 독립 인증 시 연동마다 중복 로직 누적, 세션 불일치 리스크 구조적 증가</div></div>
+      <div class="pi"><div class="pk A1"><svg viewBox="0 0 7 7" fill="currentColor"><rect width="7" height="7" rx="1"/></svg>Analyze</div><div class="pv">공용 OAuth2 서버 vs 포털 자체 토큰 발급 — OAuth2 지원 불균일, 내부 통제 필요성 비교</div></div>
+      <div class="pi"><div class="pk A2"><svg viewBox="0 0 7 7" fill="currentColor"><rect width="7" height="7" rx="1"/></svg>Action</div><div class="pv">포털 Single Entry Point 설계, 삼성 내부 → 포털 → 솔루션 3단계 인증 책임 분리</div></div>
+      <div class="pi"><div class="pk R"><svg viewBox="0 0 7 7" fill="currentColor"><rect width="7" height="7" rx="1"/></svg>Result</div><div class="pv">신규 솔루션 연계 표준화, 보안 취약 구간 단일화, 연동 공수 최소화</div></div>
+    </div>
+    <div class="vs-row"><span class="vrej">각 솔루션 독립 인증</span><span class="vsep">vs</span><span class="vok">✓ Authentication Gateway</span></div>
+    <div class="rbadge">▸ 4개 솔루션 SSO 통합 · API 무결성 100% 유지</div>
+  </div>
+  <div class="d-card rev">
+    <div class="d-glow"></div>
+    <div class="d-meta"><span class="d-ctx">삼성카드 · 권한 자동화</span><span class="d-dot"></span><span class="d-num">02</span></div>
+    <div class="d-title">수백 건의 권한 부여를 어떻게 안전하게 처리할 것인가</div>
+    <div class="paar">
+      <div class="pi"><div class="pk P"><svg viewBox="0 0 7 7" fill="currentColor"><rect width="7" height="7" rx="1"/></svg>Problem</div><div class="pv">건별 수동 API 호출 구조 — 대량 권한 변경 시 운영 공수 급증, 휴먼 에러 위험</div></div>
+      <div class="pi"><div class="pk A1"><svg viewBox="0 0 7 7" fill="currentColor"><rect width="7" height="7" rx="1"/></svg>Analyze</div><div class="pv">실시간 처리 vs CSV 배치 — 즉시성보다 검증 가능성·일괄 안정성이 핵심임을 확인</div></div>
+      <div class="pi"><div class="pk A2"><svg viewBox="0 0 7 7" fill="currentColor"><rect width="7" height="7" rx="1"/></svg>Action</div><div class="pv">CSV 기반 검증 + 배치 자동화 전환, 권한·로그·배치 관리 도구 직접 개발</div></div>
+      <div class="pi"><div class="pk R"><svg viewBox="0 0 7 7" fill="currentColor"><rect width="7" height="7" rx="1"/></svg>Result</div><div class="pv">수동 운영 공수 대폭 절감, 감사 추적 가능, 휴먼 에러 0건 유지</div></div>
+    </div>
+    <div class="vs-row"><span class="vrej">건별 수동 API 호출</span><span class="vsep">vs</span><span class="vok">✓ CSV 배치 자동화 파이프라인</span></div>
+    <div class="rbadge">▸ 운영 공수 절감 · 휴먼 에러 0건</div>
+  </div>
+  <div class="d-card rev">
+    <div class="d-glow"></div>
+    <div class="d-meta"><span class="d-ctx">Epikar · 데이터 복원</span><span class="d-dot"></span><span class="d-num">03</span></div>
+    <div class="d-title">하드웨어 이슈로 손상된 주행기록을 어떻게 복원할 것인가</div>
+    <div class="paar">
+      <div class="pi"><div class="pk P"><svg viewBox="0 0 7 7" fill="currentColor"><rect width="7" height="7" rx="1"/></svg>Problem</div><div class="pv">하드웨어 결함 → 주행기록-차량 매핑 불일치, 실 서비스 데이터 손상으로 신뢰도 직격</div></div>
+      <div class="pi"><div class="pk A1"><svg viewBox="0 0 7 7" fill="currentColor"><rect width="7" height="7" rx="1"/></svg>Analyze</div><div class="pv">전체 재수집 vs 선별 복원 — 전체 재수집 시 정상 데이터 오염 위험 확인</div></div>
+      <div class="pi"><div class="pk A2"><svg viewBox="0 0 7 7" fill="currentColor"><rect width="7" height="7" rx="1"/></svg>Action</div><div class="pv">무결성 검증 후 오류 건만 선별 복원, 재발 방지 방어 로직 설계·배포</div></div>
+      <div class="pi"><div class="pk R"><svg viewBox="0 0 7 7" fill="currentColor"><rect width="7" height="7" rx="1"/></svg>Result</div><div class="pv">2주 내 복원·방어 로직 배포 완료, 동일 유형 재발 0건</div></div>
+    </div>
+    <div class="vs-row"><span class="vrej">전체 데이터 재수집</span><span class="vsep">vs</span><span class="vok">✓ 선별 복원 + 방어 로직</span></div>
+    <div class="rbadge">▸ 2주 내 완료 · 재발 0건</div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- EXPERIENCE -->
+<section class="sec" id="experience">
+  <div class="sec-head rev"><span class="sec-tag">Experience</span><h2 class="sec-title">경력</h2></div>
+  <div class="exp-item rev">
+    <div><div class="e-company">AITStory</div><div class="e-period">2024.05 — 현재</div><span class="ebadge">재직중</span></div>
+    <div>
+      <div class="e-title">[삼성카드] 모니모 원앱 데이터서비스포털</div>
+      <div class="e-role">풀스택 개발자 · 테크 리드</div>
+      <ul class="ebullets">
+        <li>테크 리드 — 아키텍처 설계, 개발 룰 확립, 코드리뷰, 서버 설정 전반 주도</li>
+        <li>포털 Single Entry Point 구성, 4개 외부 솔루션 SSO 통합</li>
+        <li>JWT + Redis 세션 관리, WebSocket 암호화 로그인, RBAC 접근 제어</li>
+        <li>CSV 배치 자동화, 권한·로그·배치 관리 도구 직접 개발</li>
+        <li>Vue2→Vue3, Spring Boot 2.7.4→3.1.3 마이그레이션 — API 무결성 100%</li>
+      </ul>
+      <div class="etags"><span class="etag">Vue3</span><span class="etag">TypeScript</span><span class="etag">Spring Boot</span><span class="etag">Oracle</span><span class="etag">Redis</span><span class="etag">K8S</span><span class="etag">Docker</span></div>
+    </div>
+  </div>
+  <div class="exp-item rev">
+    <div><div class="e-company">LG하이케어솔루션</div><div class="e-period">2023.12 — 2024.02</div><span class="ebadge amber">계약 만료</span></div>
+    <div>
+      <div class="e-title">정보보안 솔루션 운영</div>
+      <div class="e-role">정보보안 운영 담당</div>
+      <ul class="ebullets">
+        <li>보안 로그 중앙화 및 이상 징후 탐지·이슈 대응 체계 구축</li>
+        <li>소만사 DLP 솔루션 운영으로 내부 정보 유출 방지</li>
+        <li>정보보안 정책 수립 및 문서중앙화 시스템 권한 관리</li>
+      </ul>
+    </div>
+  </div>
+  <div class="exp-item rev">
+    <div><div class="e-company">Epikar.corp</div><div class="e-period">2022.06 — 2023.09</div><span class="ebadge">풀스택</span></div>
+    <div>
+      <div class="e-title">BMW/MINI 시승 서비스 (BTS/MTS)</div>
+      <div class="e-role">풀스택 개발자 · 2인 팀 프론트·백엔드 전 구간</div>
+      <ul class="ebullets">
+        <li>기존 팀 리드 코드 인수, 구조 분석·기술 문서 정리 및 운영 주도</li>
+        <li>대시보드·주행기록·API 성능 개선 등 20개 이상 기능 개발·고도화</li>
+        <li>모노레포 공통 모듈화로 중복 코드 감소, 코드 일관성 유지</li>
+        <li>하드웨어 이슈 데이터 복원 및 방어 로직 설계 — 2주 내 완료</li>
+      </ul>
+      <div class="etags"><span class="etag">Vue2</span><span class="etag">JavaScript</span><span class="etag">Spring Boot</span><span class="etag">MySQL</span><span class="etag">Jenkins</span><span class="etag">Docker</span></div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- SKILLS -->
+<section class="sec" id="skills">
+  <div class="sec-head rev"><span class="sec-tag">Skills</span><h2 class="sec-title">기술 스택</h2></div>
+  <div class="skill-grid rev">
+    <div class="sg"><div class="sg-title">Frontend</div><div class="chips"><span class="chip">Vue3</span><span class="chip">TypeScript</span><span class="chip">JavaScript</span></div></div>
+    <div class="sg"><div class="sg-title">Backend</div><div class="chips"><span class="chip">Spring Boot</span><span class="chip">Redis</span><span class="chip">MySQL</span><span class="chip">Oracle</span></div></div>
+    <div class="sg"><div class="sg-title">Infra</div><div class="chips"><span class="chip">K8S</span><span class="chip">Docker</span><span class="chip">Git</span><span class="chip">Jenkins</span></div></div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- PROJECTS -->
+<section class="sec">
+  <div class="sec-head rev"><span class="sec-tag">Projects</span><h2 class="sec-title">주요 활동</h2></div>
+  <div class="proj-card rev">
+    <div>
+      <div class="p-ctx">넥슨 NYPC · 2024 상반기</div>
+      <div class="p-title">넥슨 NYPC 해커톤 콘텐츠 고문 개발자 · 총괄 디렉터</div>
+      <p class="p-desc">넥슨 NYPC(청소년 프로그래밍 챌린지) 홍보용 유튜브 롱폼 콘텐츠 제작에 개발 고문 및 총괄 디렉터로 참여. 역대 수상자들과 "AI로 사회적 문제를 해결한다"는 주제의 단기 해커톤 기획·진행. 단기간 내 AI 활용 웹페이지 제작 후 넥슨 공식 채널 공개.</p>
+      <div class="etags"><span class="etag">AI 활용</span><span class="etag">웹 개발</span><span class="etag">해커톤 기획</span><span class="etag">유튜브 콘텐츠</span></div>
+    </div>
+    <a href="https://youtu.be/ql0lFXHtAnk" target="_blank" class="p-link">▶ 넥슨 공식 유튜브</a>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<div class="contact-outer" id="contact">
+  <div class="contact-bg-txt">CONNECT</div>
+  <div class="contact-inner">
+    <div>
+      <div class="c-big">함께 만들어 갈<br><span>준비가 되어 있습니다.</span></div>
+      <div class="c-sub">인증 아키텍처, 풀스택 개발, 팀 리딩 — 언제든 연락주세요.</div>
+    </div>
+    <div style="display:flex;gap:14px;flex-wrap:wrap">
+      <a href="mailto:seosh9369@gmail.com" class="btn btn-p">이메일 보내기</a>
+      <a href="https://warwickjjing.github.io/resume/" target="_blank" class="btn btn-s">이력서 보기</a>
+    </div>
+  </div>
+</div>
+<footer><span>서상훈</span> · FullStack Developer · Seoul, KR · 2025</footer>
+
+<script>
+/* SCROLL PROGRESS */
+window.addEventListener('scroll',()=>{
+  const h=document.documentElement.scrollHeight-window.innerHeight;
+  document.getElementById('progress').style.width=(window.scrollY/h*100)+'%';
+});
+
+/* CONSTELLATION */
+const canvas=document.getElementById('bg-canvas'),ctx=canvas.getContext('2d');
+let W,H,pts=[];
+function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight}
+resize();window.addEventListener('resize',()=>{resize();initPts()});
+function initPts(){pts=[];const n=Math.floor(W*H/12000);for(let i=0;i<n;i++)pts.push({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-0.5)*0.25,vy:(Math.random()-0.5)*0.25,r:Math.random()*1.2+0.3,o:Math.random()*0.4+0.15,phase:Math.random()*Math.PI*2})}
+initPts();
+let frame=0;
+function draw(){
+  ctx.clearRect(0,0,W,H);frame++;
+  pts.forEach(p=>{
+    p.x+=p.vx;p.y+=p.vy;
+    if(p.x<0)p.x=W;if(p.x>W)p.x=0;if(p.y<0)p.y=H;if(p.y>H)p.y=0;
+    const o=p.o*(0.5+0.5*Math.sin(frame*0.015+p.phase));
+    ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fillStyle=`rgba(0,255,136,${o})`;ctx.fill();
+  });
+  for(let i=0;i<pts.length;i++)for(let j=i+1;j<pts.length;j++){
+    const dx=pts[i].x-pts[j].x,dy=pts[i].y-pts[j].y,d=Math.sqrt(dx*dx+dy*dy);
+    if(d<120){ctx.beginPath();ctx.moveTo(pts[i].x,pts[i].y);ctx.lineTo(pts[j].x,pts[j].y);ctx.strokeStyle=`rgba(0,255,136,${(1-d/120)*0.1})`;ctx.lineWidth=0.5;ctx.stroke()}
+  }
+  requestAnimationFrame(draw);
+}
+draw();
+
+/* MOUSE ATTRACT PARTICLES */
+let mx=0,my=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;pts.forEach(p=>{const dx=mx-p.x,dy=my-p.y,d=Math.sqrt(dx*dx+dy*dy);if(d<150){p.vx+=dx/d*0.008;p.vy+=dy/d*0.008}})});
+
+/* CURSOR */
+const cur=document.getElementById('cur'),ring=document.getElementById('cur-ring');
+let rx=0,ry=0;
+document.addEventListener('mousemove',e=>{cur.style.left=e.clientX+'px';cur.style.top=e.clientY+'px'});
+function animRing(){rx+=(mx-rx)*0.1;ry+=(my-ry)*0.1;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(animRing)}
+animRing();
+document.querySelectorAll('a,.btn,.d-card,.stat-card,.comp-col,.sg,.chip,.etag,.proj-card').forEach(el=>{
+  el.addEventListener('mouseenter',()=>{cur.style.width='18px';cur.style.height='18px';ring.style.width='56px';ring.style.height='56px';ring.style.borderColor='rgba(0,255,136,0.55)'});
+  el.addEventListener('mouseleave',()=>{cur.style.width='10px';cur.style.height='10px';ring.style.width='38px';ring.style.height='38px';ring.style.borderColor='rgba(0,255,136,0.35)'});
+});
+
+/* MAGNETIC BUTTONS */
+document.querySelectorAll('.btn').forEach(btn=>{
+  btn.addEventListener('mousemove',e=>{
+    const r=btn.getBoundingClientRect();
+    const x=(e.clientX-r.left-r.width/2)*0.3;
+    const y=(e.clientY-r.top-r.height/2)*0.3;
+    btn.style.transform=`translate(${x}px,${y}px)`;
+  });
+  btn.addEventListener('mouseleave',()=>{btn.style.transform='translate(0,0)'});
+});
+
+/* TEXT SCRAMBLE */
+const scrambleChars='アイウエオカキクケコ01█▓▒░';
+function scramble(el,original,duration=800){
+  let start=null;
+  function step(ts){
+    if(!start)start=ts;
+    const p=Math.min((ts-start)/duration,1);
+    const revealed=Math.floor(p*original.length);
+    let txt='';
+    for(let i=0;i<original.length;i++){
+      if(i<revealed)txt+=original[i];
+      else txt+=scrambleChars[Math.floor(Math.random()*scrambleChars.length)];
+    }
+    el.textContent=txt;
+    if(p<1)requestAnimationFrame(step);
+    else el.textContent=original;
+  }
+  requestAnimationFrame(step);
+}
+const n1=document.getElementById('name1');
+setTimeout(()=>scramble(n1,'서상훈',1000),600);
+setInterval(()=>scramble(n1,'서상훈',900),7000);
+
+/* SEC TITLE SCRAMBLE ON REVEAL */
+function scrambleOnReveal(el){
+  const orig=el.textContent;
+  scramble(el,orig,700);
+}
+
+/* COUNTER */
+function counter(el,target,dur){let s=0,step=target/(dur/16);const t=setInterval(()=>{s=Math.min(s+step,target);el.textContent=Math.round(s);if(s>=target)clearInterval(t)},16)}
+const cntObs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.querySelectorAll('.cnt').forEach(c=>counter(c,+c.dataset.val,1400));cntObs.unobserve(e.target)}})},{threshold:0.3});
+document.querySelector('.hero-right')&&cntObs.observe(document.querySelector('.hero-right'));
+
+/* REVEAL + SCRAMBLE TITLES */
+const revObs=new IntersectionObserver(es=>{
+  es.forEach((e,i)=>{
+    if(e.isIntersecting){
+      setTimeout(()=>{
+        e.target.classList.add('on');
+        const title=e.target.querySelector('.sec-title');
+        if(title)setTimeout(()=>scrambleOnReveal(title),200);
+      },i*80);
+      revObs.unobserve(e.target);
+    }
+  });
+},{threshold:0.08});
+document.querySelectorAll('.rev').forEach(el=>revObs.observe(el));
+
+/* 3D TILT ON STAT CARDS */
+document.querySelectorAll('.stat-card').forEach(c=>{
+  c.addEventListener('mousemove',e=>{
+    const r=c.getBoundingClientRect();
+    const x=(e.clientX-r.left)/r.width-0.5,y=(e.clientY-r.top)/r.height-0.5;
+    c.style.transform=`perspective(500px) rotateY(${x*10}deg) rotateX(${-y*10}deg) translateX(-6px)`;
+  });
+  c.addEventListener('mouseleave',()=>{c.style.transform='translateX(-6px)'});
+});
+
+/* COMP COLS TILT */
+document.querySelectorAll('.comp-col').forEach(c=>{
+  c.addEventListener('mousemove',e=>{
+    const r=c.getBoundingClientRect();
+    const x=(e.clientX-r.left)/r.width-0.5,y=(e.clientY-r.top)/r.height-0.5;
+    c.style.transform=`perspective(600px) rotateY(${x*6}deg) rotateX(${-y*6}deg) translateY(-6px)`;
+  });
+  c.addEventListener('mouseleave',()=>{c.style.transform='translateY(0)'});
+});
+</script>
